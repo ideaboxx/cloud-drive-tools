@@ -1,0 +1,19 @@
+{
+  "name": "cloud-drive-tools",
+  "version": "1.0.0",
+  "description": "Cloud drive scripts",
+  "bin": "tools/generateMasterKey.js",
+  "scripts": {
+    "generate-key": "node ./tools/generateMasterKey.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ideaboxx/cloud-drive-tools.git"
+  },
+  "author": "ideaboxx",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ideaboxx/cloud-drive-tools/issues"
+  },
+  "homepage": "https://github.com/ideaboxx/cloud-drive-tools#readme"
+}
