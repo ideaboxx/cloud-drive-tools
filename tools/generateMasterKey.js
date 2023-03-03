@@ -4,7 +4,7 @@ const child_process = require("child_process");
 
 const randomNumber = (Math.random() * 1000).toFixed(0);
 const projectId = process.argv[2] || `cloud-drive-${randomNumber}`;
-const totalAccounts = parseInt(process.argv[3]) || 98;
+const totalAccounts = parseInt(process.argv[3]) || 100;
 const debugLogs = process.argv.indexOf("--debug") > -1;
 
 function exec(command) {
@@ -38,24 +38,24 @@ async function serviceAccountExist(serviceAccountName, projectId) {
 
 async function createServiceAccount(uid, projectId) {
     const serviceAccountName = `svcaccnt-${uid}`;
-    const accntExist = await serviceAccountExist(serviceAccountName, projectId);
-    if (accntExist)
-        return console.log(
-            `> Skipping ${serviceAccountName} creation: Service account already present`
-        );
+    const keysFolder = path.join(__dirname, "keys")
+    const keyFile = `${projectId}-${serviceAccountName}.json`
 
     const commands = [
         `gcloud iam service-accounts create ${serviceAccountName} --display-name="Service account ${uid} --project ${projectId}"`,
-        `gcloud projects add-iam-policy-binding ${projectId} --member="serviceAccount:${serviceAccountName}@${projectId}.iam.gserviceaccount.com" --role="roles/owner"`,
-        `gcloud iam service-accounts keys create ${path.join(
-            __dirname,
-            "keys",
-            projectId
-        )}-${serviceAccountName}.json --iam-account=${serviceAccountName}@${projectId}.iam.gserviceaccount.com`,
+        //`gcloud projects add-iam-policy-binding ${projectId} --member="serviceAccount:${serviceAccountName}@${projectId}.iam.gserviceaccount.com" --role="roles/owner"`,
+        `gcloud iam service-accounts keys create ${path.join(keysFolder, keyFile)} --iam-account=${serviceAccountName}@${projectId}.iam.gserviceaccount.com`,
     ];
-    for (const command of commands) {
-        const out = await exec(command);
+
+    const accntExist = await serviceAccountExist(serviceAccountName, projectId);
+    if(accntExist) {
+        const out = await exec(commands[1]);
         if (debugLogs) console.log(out);
+    } else {
+        for (const command of commands) {
+            const out = await exec(command);
+            if (debugLogs) console.log(out);
+        }
     }
 }
 
@@ -65,18 +65,22 @@ async function setProject(projectId) {
 
 async function main() {
     try {
-        if (!process.argv[2]) {
-            console.log("creating new project: ", projectId);
+        try {    
+            console.log("Creating project if not exist: ", projectId);
             await createProject(projectId);
+        } catch(e) {
+            console.warn(e)
+        } finally {
+            await setProject(projectId);
         }
-        await setProject(projectId);
 
         console.log(
             `> Creating Service Accounts.. this might take time, grab a coffee or take a break!`
         );
+
         for (let i = 0; i < totalAccounts; i++) {
             console.log(`> Creating Service Accounts:`, i);
-            await createServiceAccount(i, projectId);
+            await createServiceAccount(i, projectId)
         }
         console.log(`> Service account created.. Done`);
 
